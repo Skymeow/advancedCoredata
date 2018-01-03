@@ -35,6 +35,7 @@ import CoreData
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
   var window: UIWindow?
+  //    stack installs a database that already has data in it on first launch.
   lazy var coreDataStack = CoreDataStack(modelName: "SurfJournalModel")
 
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
@@ -44,7 +45,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       let listViewController = navigationController.topViewController as? JournalListViewController else {
         fatalError("Application Storyboard mis-configuration")
     }
-
+    
     listViewController.coreDataStack = coreDataStack
 
     return true

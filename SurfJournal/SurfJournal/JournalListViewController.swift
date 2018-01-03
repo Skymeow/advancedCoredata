@@ -98,14 +98,14 @@ private extension JournalListViewController {
   func exportCSVFile() {
     navigationItem.leftBarButtonItem = activityIndicatorBarButtonItem()
 
-    // 1
-    let context = coreDataStack.mainContext
-    var results: [JournalEntry] = []
-    do {
-      results = try context.fetch(self.surfJournalFetchRequest())
-    } catch let error as NSError {
-      print("ERROR: \(error.localizedDescription)")
-    }
+    // creates and executes the code block on that private context
+    coreDataStack.storeContainer.performBackgroundTask { context in
+      var results: [JournalEntry] = []
+      do {
+        results = try context.fetch(self.surfJournalFetchRequest())
+      } catch let error as NSError {
+        print("ERROR: \(error.localizedDescription)")
+      }
 
     // 2
     let exportFilePath = NSTemporaryDirectory() + "export.csv"
@@ -135,17 +135,24 @@ private extension JournalListViewController {
       }
 
       // 5
+      print("Export Path: \(exportFilePath)")
+      // 6
+      DispatchQueue.main.async {
+        self.navigationItem.leftBarButtonItem =
+          self.exportBarButtonItem()
+        self.showExportFinishedAlertView(exportFilePath)
+      }
+    } else {
+      DispatchQueue.main.async {
+        self.navigationItem.leftBarButtonItem =
+          self.exportBarButtonItem()
+      }
+      }
+    } // 7 Closing brace for performBackgroundTask
+
       fileHandle.closeFile()
 
-      print("Export Path: \(exportFilePath)")
-      self.navigationItem.leftBarButtonItem = self.exportBarButtonItem()
-      self.showExportFinishedAlertView(exportFilePath)
-
-    } else {
-      self.navigationItem.leftBarButtonItem = self.exportBarButtonItem()
-    }
-  }
-
+      
   // MARK: Export
   
   func activityIndicatorBarButtonItem() -> UIBarButtonItem {
