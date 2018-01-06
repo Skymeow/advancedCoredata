@@ -18,20 +18,29 @@ class JournalListViewController: UITableViewController {
   }
 
   // MARK: Navigation
+//  segueing from the main list view to the journal detail view.
   override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-    // 1
+    // if detected segue is detaillist, set destination to be detail list
     if segue.identifier == "SegueListToDetail" {
-      // 2
       guard let navigationController = segue.destination as? UINavigationController,
         let detailViewController = navigationController.topViewController as? JournalEntryViewController,
         let indexPath = tableView.indexPathForSelectedRow else {
           fatalError("Application storyboard mis-configuration")
       }
-      // 3
-      let surfJournalEntry = fetchedResultsController.object(at: indexPath)
-      // 4
-      detailViewController.journalEntry = surfJournalEntry
-      detailViewController.context = surfJournalEntry.managedObjectContext
+      // get the selected journyentry by user
+      let surfJournalEntry =
+        fetchedResultsController.object(at: indexPath)
+  // MARK: Using Child Contexts for Sets of Edits
+      // Need to pass both (managed object) and the (managed object context), caz managed objects only have a weak reference to the context
+      // otherwise ARC will remove the context from memory
+      let childContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+      childContext.parent = coreDataStack.mainContext
+      
+      let childEntry = childContext.object(with: surfJournalEntry.objectID) as! JournalEntry
+      
+      detailViewController.journalEntry = childEntry
+      detailViewController.context = childContext
+      // the delegate is To inform user has finished editing detail list
       detailViewController.delegate = self
 
     } else if segue.identifier == "SegueListToDetailAdd" {
@@ -40,9 +49,9 @@ class JournalListViewController: UITableViewController {
         let detailViewController = navigationController.topViewController as? JournalEntryViewController else {
           fatalError("Application storyboard mis-configuration")
       }
-
+      //   creates a new JournalEntry entity instead of retrieving an existing one
       let newJournalEntry = JournalEntry(context: coreDataStack.mainContext)
-
+      
       detailViewController.journalEntry = newJournalEntry
       detailViewController.context = newJournalEntry.managedObjectContext
       detailViewController.delegate = self
