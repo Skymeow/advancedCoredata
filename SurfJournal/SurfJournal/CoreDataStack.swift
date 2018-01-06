@@ -77,7 +77,7 @@ private extension CoreDataStack {
 
   func seedCoreDataContainerIfFirstLaunch() {
 
-    // 1
+    // set previouslyLaunched to true so the seeding operation never happens again.
     let previouslyLaunched = UserDefaults.standard.bool(forKey: "previouslyLaunched")
     if !previouslyLaunched {
       UserDefaults.standard.set(true, forKey: "previouslyLaunched")
@@ -85,8 +85,12 @@ private extension CoreDataStack {
       // Default directory where the CoreDataStack will store its files
       let directory = NSPersistentContainer.defaultDirectoryURL()
       let url = directory.appendingPathComponent(modelName + ".sqlite")
-
-      // 2: Copying the SQLite file
+      
+      // MARK: Copy
+      
+      // MARK: If the files fail to copy, there’s no point in continuing, so the catch blocks call fatalError.
+      
+      // Copying the SQLite file to the above directory
       let seededDatabaseURL = Bundle.main.url(forResource: modelName, withExtension: "sqlite")!
       _ = try? FileManager.default.removeItem(at: url)
       do {
@@ -94,8 +98,8 @@ private extension CoreDataStack {
       } catch let nserror as NSError {
         fatalError("Error: \(nserror.localizedDescription)")
       }
-
-      // 3: Copying the SHM file
+  
+      // Copying the SHM file ((shared memory file)
       let seededSHMURL = Bundle.main.url(forResource: modelName, withExtension: "sqlite-shm")!
       let shmURL = directory.appendingPathComponent(modelName + ".sqlite-shm")
       _ = try? FileManager.default.removeItem(at: shmURL)
@@ -105,7 +109,7 @@ private extension CoreDataStack {
         fatalError("Error: \(nserror.localizedDescription)")
       }
 
-      // 4: Copying the WAL file
+      // Copying the WAL file (write-ahead logging)
       let seededWALURL = Bundle.main.url(forResource: modelName, withExtension: "sqlite-wal")!
       let walURL = directory.appendingPathComponent(modelName + ".sqlite-wal")
       _ = try? FileManager.default.removeItem(at: walURL)
